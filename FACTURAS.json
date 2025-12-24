@@ -1,0 +1,1163 @@
+{
+  "name": "FACTURAS",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -64,
+        -636
+      ],
+      "id": "6e854b52-e628-48e3-a5a1-4fee9e564083",
+      "name": "Telegram Trigger",
+      "webhookId": "767274bb-a68e-4d53-b34c-f0300b241500",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.document.mime_type }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "cd992813-31d9-4e78-8238-6af1dbcaab42"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5d64a91f-253b-480d-8d45-d95d25642728",
+                    "leftValue": "={{ $json.message.photo[0].file_unique_id }}",
+                    "rightValue": "AQAD",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IMAGEN"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        160,
+        -636
+      ],
+      "id": "1a09a504-be49-40be-b96f-7f16e9504e1b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        608,
+        -784
+      ],
+      "id": "fb5e6386-911a-4363-9d92-682e922aa584",
+      "name": "OCR UP MISTRAL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RfhiioMlYpCRUUoc",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        384,
+        -784
+      ],
+      "id": "725c4950-e9ee-4b08-bf49-b22373ed60db",
+      "name": "Telegram",
+      "webhookId": "07854c89-dfa4-4c76-9b5c-f89a09bb2dc5",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiry",
+              "value": "12"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        -784
+      ],
+      "id": "a2259b74-f886-4deb-91a4-8e92f9683010",
+      "name": "LINK MISTRAL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RfhiioMlYpCRUUoc",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral-ocr-latest\",\n  \"document\": {\n    \"type\": \"document_url\",\n    \"document_url\": \"{{ $json.url }}\"\n  },\n  \"table_format\": \"html\",\n  \"include_image_base64\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1056,
+        -784
+      ],
+      "id": "8ea33f9e-474d-44d4-9d9a-b1ee8425f9b5",
+      "name": "PARAMETERS MISTRAL",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RfhiioMlYpCRUUoc",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un extractor de datos de facturas. Tu ÚNICA tarea es devolver JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional.\n\nIMPORTANTE:\n\nNO uses ```json ni```\n\nNO agregues texto antes o después del JSON\nResponde ÚNICAMENTE con el objeto JSON puro\nExtrae estos campos de la factura:\n{\n\"Factura No.\": \"\", \n\"Fecha de emisión\": \"\",\n\"Forma de pago\": \"\", \n\"Nombre Proveedor\": \"\",\n\"Subtotal\": \"\",\n\"IGV\": \"\",\n\"TOTAL A PAGAR\": \"\"\n}\nFormato de valores monetarios:  \n123.45 (con punto de cientos, sin decimales)\n\nfactura:{{ $json.text }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1952,
+        -688
+      ],
+      "id": "428fd91b-fd39-4295-8539-01c95fe64d78",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1952,
+        -480
+      ],
+      "id": "9fe70a1d-3af0-4fd1-ab0b-f1a1e6a1d057",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "1CqRcEjSORPw2dGJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        -584
+      ],
+      "id": "f8a6ed69-f92c-41f9-8d81-a8a245ac0b4d",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = items[0].json.text;\n\n// Limpiar bloques de código markdown\nlet jsonLimpio = \n  texto.replace(/```json\\n?/g, '')\n       .replace(/```\\n?/g, '').trim();\n\n// Parsear y devolver\nconst datos = JSON.parse(jsonLimpio);\n\nreturn ({\n  json: datos\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2304,
+        -784
+      ],
+      "id": "7f7d46e7-1f8c-42f6-8c7c-68fa5a018aba",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1oF9Tg6weO1BZA36jnurHtJO_ro3EPfY5gjbfOy9UzUs",
+          "mode": "list",
+          "cachedResultName": "FACTURAS 2026",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oF9Tg6weO1BZA36jnurHtJO_ro3EPfY5gjbfOy9UzUs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oF9Tg6weO1BZA36jnurHtJO_ro3EPfY5gjbfOy9UzUs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "N. Factura": "={{ $('Code').item.json['Factura No.'] }}",
+            "Fecha de Emision": "={{ $('Code').item.json['Fecha de emisión'] }}",
+            "Fecha de Pago": "={{ $('Code').item.json['Forma de pago'] }}",
+            "Nombre Proveedor": "={{ $('Code').item.json['Nombre Proveedor'] }}",
+            "Subtotal": "={{ $('Code').item.json.Subtotal }}",
+            "IGV": "={{ $('Code').item.json.IGV }}",
+            "Total": "={{ $('Code').item.json['TOTAL A PAGAR'] }}",
+            "webViewLink": "={{ $json.webContentLink }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "N. Factura",
+              "displayName": "N. Factura",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Emision",
+              "displayName": "Fecha de Emision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Pago",
+              "displayName": "Fecha de Pago",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre Proveedor",
+              "displayName": "Nombre Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "IGV",
+              "displayName": "IGV",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "webViewLink",
+              "displayName": "webViewLink",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        3200,
+        -784
+      ],
+      "id": "e6f6c1bb-c1a0-4365-b0fe-366a2e9cc004",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nysGGMIZG2zsQz8L",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "={{ $node['CodeNAME'].binary.data.fileName }}\n",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1QqhZh-y4F4kDcMeDvoLTsbIIntrTFVpV",
+          "mode": "list",
+          "cachedResultName": "FACTURAS 2026",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1QqhZh-y4F4kDcMeDvoLTsbIIntrTFVpV"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2976,
+        -784
+      ],
+      "id": "c3720d1d-9570-4aa0-aa9d-cdde0c87f12f",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gZT7QEjgISRjW9ye",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const factura = $input.first().json['Factura No.'];\n\nconst nombreArchivo = `${factura.replace(/\\s+/g, '')}`;\n\nreturn [\n  {\n    json: items[0].json,\n    binary: {\n      data: {\n        ...items[0].binary?.data,\n        fileName: nombreArchivo\n      }\n    }\n  }\n];\n\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2528,
+        -784
+      ],
+      "id": "51cc962c-8540-4a5d-84c3-b66bd21453ec",
+      "name": "CodeNAME"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2752,
+        -784
+      ],
+      "id": "dbb30fdb-cf09-42ad-915c-96394026f0c4",
+      "name": "Get a file",
+      "webhookId": "9ac058b0-d8e7-4810-a6d6-53a1eda55879",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "=Registro exitoso!! \nProveerdor:{{ $json['Nombre Proveedor'] }}\nTotal: {{ $json.Total }}\n{{ $json.webViewLink }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3424,
+        -636
+      ],
+      "id": "3ce30199-5541-4df0-a24f-55354ca21bad",
+      "name": "Send a text message",
+      "webhookId": "d3507f5c-ba9e-4302-b50e-6008e7ed5717",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "openai/gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "OPENAI/GPT-4O-MINI"
+        },
+        "text": "Eres un extractor de datos de facturas. Tu ÚNICA tarea es devolver JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional.\n\nIMPORTANTE:\n\nNO uses ```json ni```\n\nNO agregues texto antes o después del JSON\nResponde ÚNICAMENTE con el objeto JSON puro\nExtrae estos campos de la imagen factura:\n{\n\"Factura No.\": \"\", \n\"Fecha de emisión\": \"\",\n\"Forma de pago\": \"\", \n\"Nombre Proveedor\": \"\",\n\"Subtotal\": \"\",\n\"IGV\": \"\",\n\"TOTAL A PAGAR\": \"\"\n}\nFormato de valores monetarios:  \n123.45 (con punto de cientos, sin decimales)",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        704,
+        -272
+      ],
+      "id": "8acc31dc-cf27-4be4-b218-b648d4b5f122",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "1CqRcEjSORPw2dGJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[2].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        416,
+        -272
+      ],
+      "id": "83d0905b-2f0a-4111-9304-1902821f712a",
+      "name": "TelegramImagen",
+      "webhookId": "07854c89-dfa4-4c76-9b5c-f89a09bb2dc5",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.photo[3].file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        -272
+      ],
+      "id": "8cc75537-5492-4fe7-98ed-5fa262668792",
+      "name": "Get a file1",
+      "webhookId": "9ac058b0-d8e7-4810-a6d6-53a1eda55879",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = items[0].json['0'].content[0].text;\n\n// Limpiar bloques de código markdown\nlet jsonLimpio = \n  texto.replace(/```json\\n?/g, '')\n       .replace(/```\\n?/g, '').trim();\n\n// Parsear y devolver\nconst datos = JSON.parse(jsonLimpio);\n\nreturn ({\n  json: datos\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -272
+      ],
+      "id": "b01837cb-2147-4901-9748-ddd2b592617c",
+      "name": "CodeIm"
+    },
+    {
+      "parameters": {
+        "name": "={{ $node['CodeNAME1'].binary.data.fileName }}\n",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1QqhZh-y4F4kDcMeDvoLTsbIIntrTFVpV",
+          "mode": "list",
+          "cachedResultName": "FACTURAS 2026",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1QqhZh-y4F4kDcMeDvoLTsbIIntrTFVpV"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1664,
+        -272
+      ],
+      "id": "1499bfbd-b064-4560-b479-0ab03a224ca4",
+      "name": "Upload file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gZT7QEjgISRjW9ye",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const factura = items[0].json['Factura No.'] || '';\nconst nombreArchivo = `${factura.replace(/\\s+/g, '')}`;\n\nreturn [\n  {\n    json: items[0].json,\n    binary: {\n      data: {\n        ...items[0].binary?.data,\n        fileName: nombreArchivo\n      }\n    }\n  }\n];\n\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        -272
+      ],
+      "id": "c580d4e9-95db-4744-9a2c-bddae3840694",
+      "name": "CodeNAME1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1oF9Tg6weO1BZA36jnurHtJO_ro3EPfY5gjbfOy9UzUs",
+          "mode": "list",
+          "cachedResultName": "FACTURAS 2026",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oF9Tg6weO1BZA36jnurHtJO_ro3EPfY5gjbfOy9UzUs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1oF9Tg6weO1BZA36jnurHtJO_ro3EPfY5gjbfOy9UzUs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "N. Factura": "={{ $('CodeIm').item.json['Factura No.'] }}",
+            "Fecha de Emision": "={{ $('CodeIm').item.json['Fecha de emisión'] }}",
+            "Fecha de Pago": "={{ $('CodeIm').item.json['Forma de pago'] }}",
+            "Nombre Proveedor": "={{ $('CodeIm').item.json['Nombre Proveedor'] }}",
+            "Subtotal": "={{ $('CodeIm').item.json.Subtotal }}",
+            "IGV": "={{ $('CodeIm').item.json.IGV }}",
+            "Total": "={{ $('CodeIm').item.json['TOTAL A PAGAR'] }}",
+            "webViewLink": "={{ $json.webContentLink }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "N. Factura",
+              "displayName": "N. Factura",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Emision",
+              "displayName": "Fecha de Emision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Fecha de Pago",
+              "displayName": "Fecha de Pago",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre Proveedor",
+              "displayName": "Nombre Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "IGV",
+              "displayName": "IGV",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "webViewLink",
+              "displayName": "webViewLink",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1888,
+        -272
+      ],
+      "id": "be792c7f-02b3-4367-a7eb-2188ca099d6c",
+      "name": "Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nysGGMIZG2zsQz8L",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c20daf49-b3ec-4628-84f1-1692df6eb919",
+              "leftValue": "={{ $json.pages[0].markdown }}",
+              "rightValue": "[tbl-0.html](tbl-0.html)",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1280,
+        -784
+      ],
+      "id": "c6d0bd3f-1b01-4aba-8d5f-e46dea534c7e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un extractor de datos de facturas. Tu ÚNICA tarea es devolver JSON válido, SIN bloques de código markdown, SIN explicaciones, SIN texto adicional.\n\nIMPORTANTE:\n\nNO uses ```json ni```\n\nNO agregues texto antes o después del JSON\nResponde ÚNICAMENTE con el objeto JSON puro\nExtrae estos campos de la factura:\n{\n\"Factura No.\": \"\", \n\"Fecha de emisión\": \"\",\n\"Forma de pago\": \"\", \n\"Nombre Proveedor\": \"\",\n\"Subtotal\": \"\",\n\"IGV\": \"\",\n\"TOTAL A PAGAR\": \"\"\n}\nFormato de valores monetarios:  \n123.45 (con punto de cientos, sin decimales)\n\nfactura:{{ $('PARAMETERS MISTRAL').item.json.pages[0].markdown }}",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1952,
+        -1088
+      ],
+      "id": "e816810f-0172-45dd-9e90-0a6dae356404",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1952,
+        -880
+      ],
+      "id": "c749892a-6be8-4602-aceb-81f7300c14e6",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "1CqRcEjSORPw2dGJ",
+          "name": "OpenAi account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.document.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        -584
+      ],
+      "id": "4ac0a0e0-b334-4fc2-bd37-f59ca7f13ef0",
+      "name": "Telegram1",
+      "webhookId": "07854c89-dfa4-4c76-9b5c-f89a09bb2dc5",
+      "credentials": {
+        "telegramApi": {
+          "id": "jQrqngSvG2mWO6Uh",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TelegramImagen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OCR UP MISTRAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR UP MISTRAL": {
+      "main": [
+        [
+          {
+            "node": "LINK MISTRAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LINK MISTRAL": {
+      "main": [
+        [
+          {
+            "node": "PARAMETERS MISTRAL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "CodeNAME",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CodeNAME": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TelegramImagen": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "CodeIm",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CodeIm": {
+      "main": [
+        [
+          {
+            "node": "CodeNAME1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file1": {
+      "main": [
+        [
+          {
+            "node": "Upload file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CodeNAME1": {
+      "main": [
+        [
+          {
+            "node": "Get a file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PARAMETERS MISTRAL": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ed9d97eb-71cc-4ce7-813a-788b1b5d7fdb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2d7aba10bab1bef5e98bbc171a7d5ca6f84eb5240e24205b03fdf4c32fb10164"
+  },
+  "id": "CyXZoPCIymFLOKud",
+  "tags": []
+}
